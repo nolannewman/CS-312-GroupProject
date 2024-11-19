@@ -10,7 +10,6 @@ Run the auth.sql file to generate a database for users to allow signin and signu
 ### 3. Configure Environment Variables
 ```bash
 DATABASE_URL=postgresql://<username>:<password>@localhost:5432/music_player
-PORT=3000
 AUTH_URL=postgresql://<username>:<password>@localhost:5432/auth_db
 PORT=3000
 ```
