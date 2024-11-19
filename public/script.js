@@ -46,11 +46,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const song = songs[index];
         if (audio.src !== `/music/${song.file_path}`) {
             audio.src = `/music/${song.file_path}`;
+            currentSongIndex = index;
+            nowPlaying.textContent = `Now Playing: ${song.title} by ${song.artist}`;
         }
 
-        audio.play();
-        currentSongIndex = index;
-        nowPlaying.textContent = `Now Playing: ${song.title} by ${song.artist}`;
+        audio.play(); // Resume playback or start playing the song
     };
 
     // Pause the current song
@@ -64,7 +64,11 @@ document.addEventListener("DOMContentLoaded", () => {
             if (currentSongIndex === index && !audio.paused) {
                 pauseSong();
             } else {
-                playSong(index);
+                if (currentSongIndex !== index) {
+                    playSong(index);
+                } else {
+                    audio.play(); // Resume playback
+                }
             }
         });
     });
@@ -90,8 +94,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Play button (global control)
     playBtn.addEventListener("click", () => {
-        if (currentSongIndex !== null) {
-            playSong(currentSongIndex);
+        if (audio.paused && currentSongIndex !== null) {
+            audio.play(); // Resume playing the current song
+        } else if (currentSongIndex === null && songs.length > 0) {
+            playSong(0); // Start playing the first song if nothing is playing
         }
     });
 
