@@ -10,8 +10,14 @@
     <div class="container">
         <header>
             <input type="text" placeholder="Search for music..." class="search-bar">
-            <button class="btn profile">Profile</button>
-            <button class="btn logout">Logout</button>
+            
+            <!-- Conditional Rendering for Login/Profile Buttons -->
+            <% if (!user) { %>
+                <a href="/signin" class="btn login">Login</a>
+            <% } else { %>
+                <a href="/profile" class="btn profile">Profile</a>
+                <a href="/logout" class="btn logout">Logout</a>
+            <% } %>
         </header>
         <main>
             <div class="playlists">
