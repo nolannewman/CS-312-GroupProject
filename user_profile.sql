@@ -18,12 +18,14 @@ CREATE TABLE Playlists (
 );
 
 -- Create the Songs table
-CREATE TABLE Songs (
+CREATE TABLE songs (
     song_id SERIAL PRIMARY KEY,
-    song_name VARCHAR(255) NOT NULL,
-    artist_name VARCHAR(255) NOT NULL,
-    duration INT NOT NULL,  -- Duration in seconds
-    genre VARCHAR(100)
+    title VARCHAR(255) NOT NULL,
+    artist VARCHAR(255) NOT NULL,
+    album VARCHAR(255),
+    genre VARCHAR(100),
+    release_year INT,
+    file_path VARCHAR(255) NOT NULL
 );
 
 -- Create the Playlist_Songs table to link playlists and songs
