@@ -1,5 +1,5 @@
 CREATE TABLE Users (
-    user_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id SERIAL PRIMARY KEY,
     username VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
@@ -8,13 +8,13 @@ CREATE TABLE Users (
     loop_enabled BOOLEAN DEFAULT FALSE
 );
 CREATE TABLE Playlists (
-    playlist_id INT PRIMARY KEY AUTO_INCREMENT,
+    playlist_id SERIAL PRIMARY KEY,
     user_id INT,
     playlist_name VARCHAR(255) NOT NULL,
     FOREIGN KEY (user_id) REFERENCES Users(user_id)
 );
 CREATE TABLE Songs (
-    song_id INT PRIMARY KEY AUTO_INCREMENT,
+    song_id SERIAL PRIMARY KEY,
     song_name VARCHAR(255) NOT NULL,
     artist_name VARCHAR(255) NOT NULL,
     duration INT NOT NULL,  -- Duration in seconds
