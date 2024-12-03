@@ -86,9 +86,64 @@ function addToRecentlyPlayed(session, songTitle) {
     session.recentlyPlayed = [songTitle, ...session.recentlyPlayed.filter((t) => t !== songTitle)].slice(0, 5);
 }
 
-// Route: Render the homepage with optional search functionality
+// Add a new playlist
+app.post("/api/playlists", (req, res) => {
+    const { name } = req.body;
+    if (!req.session.playlists) {
+        req.session.playlists = [];
+    }
+
+    if (!name || req.session.playlists.some((playlist) => playlist.name === name)) {
+        return res.status(400).json({ error: "Invalid or duplicate playlist name" });
+    }
+
+    req.session.playlists.push({ name, songs: [] });
+    res.status(201).json({ message: "Playlist created successfully" });
+});
+
+// Add song to a playlist
+app.post("/api/playlists/:name", (req, res) => {
+    const { name } = req.params;
+    const { song } = req.body;
+
+    if (!req.session.playlists) {
+        return res.status(400).json({ error: "No playlists available" });
+    }
+
+    const playlist = req.session.playlists.find((playlist) => playlist.name === name);
+    if (!playlist) {
+        return res.status(404).json({ error: "Playlist not found" });
+    }
+
+    if (!song || playlist.songs.includes(song)) {
+        return res.status(400).json({ error: "Invalid or duplicate song" });
+    }
+
+    playlist.songs.push(song);
+    res.status(200).json({ message: "Song added to playlist" });
+});
+
+// Fetch playlists
+app.get("/api/playlists", (req, res) => {
+    res.json(req.session.playlists || []);
+});
+
+// Delete a playlist
+app.delete("/api/playlists/:name", (req, res) => {
+    const { name } = req.params;
+
+    if (!req.session.playlists) {
+        return res.status(400).json({ error: "No playlists available" });
+    }
+
+    req.session.playlists = req.session.playlists.filter((playlist) => playlist.name !== name);
+    res.status(200).json({ message: "Playlist deleted successfully" });
+});
+
+// Fetch playlists for homepage
 app.get("/", async (req, res) => {
     try {
+        const playlists = req.session.playlists || [];
         const { query } = req.query;
         let result;
 
@@ -108,12 +163,13 @@ app.get("/", async (req, res) => {
 
         const songs = result.rows;
         const recentlyPlayed = req.session.recentlyPlayed || [];
-        res.render("index", { songs, recentlyPlayed, user: req.user, query });
+        res.render("index", { songs, recentlyPlayed, playlists, user: req.user, query });
     } catch (error) {
         console.error("Error fetching songs:", error);
         res.status(500).send("Internal Server Error");
     }
 });
+
 
 // POST: Handle playing a song
 app.post("/play", (req, res) => {
@@ -221,6 +277,31 @@ app.get("/logout", (req, res) => {
         res.redirect("/");
     });
 });
+
+// Profile Page Route
+app.get("/profile", async (req, res) => {
+    if (!req.isAuthenticated()) {
+        return res.redirect("/signin");
+    }
+
+    try {
+        const songsResult = await pool.query("SELECT * FROM songs ORDER BY id ASC");
+        const songs = songsResult.rows;
+
+        const recentlyPlayed = req.session.recentlyPlayed || [];
+        const user = req.user;
+
+        res.render("profile", {
+            user,
+            recentlyPlayed,
+            songs,
+        });
+    } catch (error) {
+        console.error("Error fetching profile data:", error);
+        res.status(500).send("Internal Server Error");
+    }
+});
+
 
 // Serve MP3/WAV files
 app.get("/music/:filename", (req, res) => {

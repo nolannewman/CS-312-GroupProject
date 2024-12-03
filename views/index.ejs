@@ -32,19 +32,21 @@
             </div>
         </header>
         <main>
-            <div class="playlists">
-                <h2>Playlists</h2>
+            <section class="playlists">
+                <h2>Your Playlists</h2>
                 <ul>
-                    <li>Favorite Songs</li>
+                    <% playlists.forEach(playlist => { %>
+                        <li>
+                            <strong><%= playlist.name %></strong>
+                            <ul>
+                                <% playlist.songs.forEach(song => { %>
+                                    <li><%= song %></li>
+                                <% }) %>
+                            </ul>
+                        </li>
+                    <% }) %>
                 </ul>
-
-                <h2>Recently Played</h2>
-                <ul id="recentlyPlayed">
-                    <% recentlyPlayed.slice(0, 5).forEach((title) => { %>
-                        <li><%= title %></li>
-                    <% }); %>
-                </ul>
-            </div>
+            </section>
             <div class="songs">
                 <h2>Songs</h2>
                 <ul>

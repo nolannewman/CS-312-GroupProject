@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <link rel="stylesheet" href="profilestyle.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Welcome, <%= user.username %></h1>
+            <p>Email: <%= user.email %></p>
+            <a class="auth-btn logout-btn" href="/logout">Logout</a>
+        </header>
+
+        <main>
+            <section class="recently-played">
+                <h2>Recently Played</h2>
+                <% if (recentlyPlayed.length > 0) { %>
+                    <ul>
+                        <% recentlyPlayed.forEach(song => { %>
+                            <li><%= song %></li>
+                        <% }) %>
+                    </ul>
+                <% } else { %>
+                    <p>No songs played recently.</p>
+                <% } %>
+            </section>
+
+            <section class="songs">
+                <h2>All Songs</h2>
+                <ul id="songs-list">
+                    <% songs.forEach((song, index) => { %>
+                        <li>
+                            <input type="checkbox" class="song-checkbox" id="song-<%= index %>" data-title="<%= song.title %>">
+                            <label for="song-<%= index %>"><%= song.title %> by <%= song.artist %></label>
+                        </li>
+                    <% }) %>
+                </ul>
+            </section>
+
+            <section class="playlists">
+                <h2>Your Playlists</h2>
+                <form id="create-playlist-form">
+                    <input type="text" id="playlist-name" placeholder="Playlist Name" required>
+                    <button class="auth-btn" type="submit">Create Playlist</button>
+                </form>
+                <ul id="playlists-list">
+                    <!-- Playlists will be dynamically rendered here -->
+                </ul>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const playlistsList = document.getElementById("playlists-list");
+        const createPlaylistForm = document.getElementById("create-playlist-form");
+
+        // Fetch and render playlists
+        const fetchPlaylists = async () => {
+            try {
+                const res = await fetch("/api/playlists");
+                const playlists = await res.json();
+
+                playlistsList.innerHTML = playlists
+                    .map(
+                        (playlist) =>
+                            `<li>
+                                <div>
+                                    <strong>${playlist.name}</strong>
+                                    <button class="auth-btn logout-btn delete-playlist" data-name="${playlist.name}">Delete</button>
+                                </div>
+                                <ul>
+                                    ${playlist.songs.map(song => `<li>${song}</li>`).join("")}
+                                </ul>
+                            </li>`
+                    )
+                    .join("");
+            } catch (error) {
+                console.error("Error fetching playlists:", error);
+            }
+        };
+
+        // Create a new playlist
+        createPlaylistForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const name = document.getElementById("playlist-name").value;
+
+            const selectedSongs = Array.from(
+                document.querySelectorAll(".song-checkbox:checked")
+            ).map((checkbox) => checkbox.dataset.title);
+
+            if (selectedSongs.length === 0) {
+                alert("Please select at least one song to create a playlist.");
+                return;
+            }
+
+            try {
+                const res = await fetch("/api/playlists", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name }),
+                });
+
+                if (res.ok) {
+                    // Add songs to the newly created playlist
+                    for (const song of selectedSongs) {
+                        await fetch(`/api/playlists/${name}`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ song }),
+                        });
+                    }
+                    fetchPlaylists();
+                } else {
+                    console.error("Error creating playlist");
+                }
+            } catch (error) {
+                console.error("Error:", error);
+            }
+        });
+
+        // Delete a playlist
+        playlistsList.addEventListener("click", async (e) => {
+            if (e.target.classList.contains("delete-playlist")) {
+                const playlistName = e.target.dataset.name;
+
+                try {
+                    const res = await fetch(`/api/playlists/${playlistName}`, {
+                        method: "DELETE",
+                    });
+
+                    if (res.ok) {
+                        fetchPlaylists();
+                    } else {
+                        console.error("Error deleting playlist");
+                    }
+                } catch (error) {
+                    console.error("Error:", error);
+                }
+            }
+        });
+
+        // Initial fetch
+        fetchPlaylists();
+    </script>
+</body>
+</html>
