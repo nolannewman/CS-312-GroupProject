@@ -6,8 +6,8 @@
     <title>Music Player</title>
     <link rel="stylesheet" href="/styles.css">
     <style>
-                /* Shading styles for active like/dislike */
-                .like-btn.active {
+        /* Shading styles for active like/dislike */
+        .like-btn.active {
             background-color: #0f0; /* Green for like */
             color: #fff;
         }
@@ -16,17 +16,77 @@
             background-color: #f00; /* Red for dislike */
             color: #fff;
         }
+
         .artist-rating-btn.active {
-    background-color: #4caf50; /* Green */
-    color: white;
-    font-weight: bold;
-    border: 2px solid #388e3c;
-}
+            background-color: #4caf50; /* Green */
+            color: white;
+            font-weight: bold;
+            border: 2px solid #388e3c;
+        }
+
+        nav {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        nav a {
+            text-decoration: none;
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        nav a:hover {
+            background-color: #0056b3;
+        }
+
+        .search-container {
+            margin-bottom: 20px;
+        }
+
+        .search-bar {
+            padding: 10px;
+            width: calc(100% - 110px);
+            margin-right: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .search-btn {
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .search-btn:hover {
+            background-color: #218838;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
+            <h1>Welcome to the Music Player</h1>
+
+            <!-- Navigation Bar -->
+            <nav>
+                <a href="/top-songs" class="btn nav-btn">Top Songs</a>
+                <% if (!user) { %>
+                    <a href="/signin" class="btn nav-btn">Login</a>
+                <% } else { %>
+                    <a href="/profile" class="btn nav-btn">Profile</a>
+                    <a href="/logout" class="btn nav-btn logout-btn">Logout</a>
+                <% } %>
+            </nav>
+
+            <!-- Search Bar -->
             <div class="search-container">
                 <form action="/" method="GET" class="search-form">
                     <input
@@ -38,18 +98,9 @@
                     />
                     <button type="submit" class="btn search-btn">Search</button>
                 </form>
-                
-
-                <div class="auth-buttons">
-                    <% if (!user) { %>
-                        <a href="/signin" class="btn auth-btn">Login</a>
-                    <% } else { %>
-                        <a href="/profile" class="btn auth-btn">Profile</a>
-                        <a href="/logout" class="btn auth-btn logout-btn">Logout</a>
-                    <% } %>
-                </div>
             </div>
         </header>
+
         <main>
             <section class="playlists">
                 <h2>Your Playlists</h2>
@@ -66,6 +117,7 @@
                     <% }) %>
                 </ul>
             </section>
+
             <div class="songs">
                 <h2>Songs</h2>
                 <ul>
@@ -79,16 +131,8 @@
                             </div>
                             <% if (user) { %>
                                 <div class="like-dislike-buttons">
-                                    <button 
-                                        class="like-btn" 
-                                        data-id="<%= song.id %>">
-                                        👍 Like
-                                    </button>
-                                    <button 
-                                        class="dislike-btn" 
-                                        data-id="<%= song.id %>">
-                                        👎 Dislike
-                                    </button>
+                                    <button class="like-btn" data-id="<%= song.id %>">👍 Like</button>
+                                    <button class="dislike-btn" data-id="<%= song.id %>">👎 Dislike</button>
                                 </div>
                                 <div class="artist-rating-buttons" data-artist="<%= song.artist %>">
                                     Rate this artist:
@@ -104,7 +148,7 @@
                 </ul>
             </div>
         </main>
-        
+
         <footer>
             <div class="now-playing">
                 <p>No song playing</p>
@@ -129,8 +173,6 @@
             </div>
         </footer>
     </div>
-    
-
     <script src="/script.js"></script>
 </body>
 </html>

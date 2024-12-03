@@ -416,14 +416,14 @@ app.post("/api/artists/:artist/rate", async (req, res) => {
     }
 
     try {
-        // Check if the user has already rated the artist
+        // Check if the user has already rated this artist
         const existingRating = await pool.query(
             "SELECT * FROM user_artist_ratings WHERE user_id = $1 AND artist = $2",
             [userId, artist]
         );
 
         if (existingRating.rows.length > 0) {
-            // Update the existing rating
+            // Update the rating
             await pool.query(
                 "UPDATE user_artist_ratings SET rating = $1 WHERE user_id = $2 AND artist = $3",
                 [rating, userId, artist]
@@ -437,25 +437,67 @@ app.post("/api/artists/:artist/rate", async (req, res) => {
         }
 
         // Calculate the new average rating for the artist
-        const updatedRating = await pool.query(
+        const aggregatedRating = await pool.query(
             `SELECT ROUND(AVG(rating)::NUMERIC, 2) AS avg_rating
-             FROM user_artist_ratings WHERE artist = $1`,
+             FROM user_artist_ratings
+             WHERE artist = $1`,
             [artist]
         );
 
         res.json({
             message: `Successfully rated artist: ${artist}`,
-            averageRating: updatedRating.rows[0].avg_rating,
+            averageRating: aggregatedRating.rows[0].avg_rating,
         });
     } catch (error) {
         console.error("Error submitting artist rating:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 });
-app.get("/", async (req, res) => {
+app.get("/top-songs", async (req, res) => {
     try {
-        const playlists = req.session.playlists || [];
-        const { query } =
+        // Fetch top-rated songs
+        const topRated = await pool.query(
+            `SELECT id, title, artist, album, genre, release_year, rating 
+             FROM songs 
+             WHERE rating IS NOT NULL 
+             ORDER BY rating DESC 
+             LIMIT 10`
+        );
+
+        // Fetch top-played songs (assumes there's a `play_count` column in the `songs` table)
+        const topPlayed = await pool.query(
+            `SELECT id, title, artist, album, genre, release_year, play_count 
+             FROM songs 
+             WHERE play_count IS NOT NULL 
+             ORDER BY play_count DESC 
+             LIMIT 10`
+        );
+
+        res.render("top-songs", {
+            topRated: topRated.rows,
+            topPlayed: topPlayed.rows,
+            user: req.user || null,
+        });
+    } catch (error) {
+        console.error("Error fetching top songs:", error);
+        res.status(500).send("Internal Server Error");
+    }
+});
+// Increment play count when a song is played
+app.post("/play", async (req, res) => {
+    const { title } = req.body;
+    if (title) {
+        addToRecentlyPlayed(req.session, title);
+
+        // Increment play count in the database
+        try {
+            await pool.query("UPDATE songs SET play_count = play_count + 1 WHERE title = $1", [title]);
+        } catch (error) {
+            console.error("Error incrementing play count:", error);
+        }
+    }
+    res.status(200).json({ message: "Recently Played updated" });
+});
 
 
 // Start the server
