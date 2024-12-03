@@ -9,43 +9,64 @@
 <body>
     <div class="container">
         <header>
-            <input type="text" placeholder="Search for music..." class="search-bar">
-            
-            <!-- Conditional Rendering for Login/Profile Buttons -->
-            <% if (!user) { %>
-                <a href="/signin" class="btn login">Login</a>
-            <% } else { %>
-                <a href="/profile" class="btn profile">Profile</a>
-                <a href="/logout" class="btn logout">Logout</a>
-            <% } %>
+            <div class="search-container">
+                <form action="/" method="GET" class="search-form">
+                    <input
+                        type="text"
+                        name="query"
+                        value="<%= query || '' %>"
+                        placeholder="Search by title, album, artist, or genre..."
+                        class="search-bar"
+                    />
+                    <button type="submit" class="btn search-btn">Search</button>
+                </form>
+
+                <div class="auth-buttons">
+                    <% if (!user) { %>
+                        <a href="/signin" class="btn auth-btn">Login</a>
+                    <% } else { %>
+                        <a href="/profile" class="btn auth-btn">Profile</a>
+                        <a href="/logout" class="btn auth-btn logout-btn">Logout</a>
+                    <% } %>
+                </div>
+            </div>
         </header>
         <main>
             <div class="playlists">
                 <h2>Playlists</h2>
                 <ul>
                     <li>Favorite Songs</li>
-                    <li>Recently Played</li>
+                </ul>
+
+                <h2>Recently Played</h2>
+                <ul id="recentlyPlayed">
+                    <% recentlyPlayed.slice(0, 5).forEach((title) => { %>
+                        <li><%= title %></li>
+                    <% }); %>
                 </ul>
             </div>
             <div class="songs">
                 <h2>Songs</h2>
                 <ul>
-                    <% songs.forEach((song) => { %>
+                    <% songs.forEach((song, index) => { %>
                         <li>
-                            <button class="play-btn" data-file="<%= song.file_path %>">▶</button>
+                            <button class="play-btn" data-index="<%= index %>" data-title="<%= song.title %>">▶</button>
                             <div>
                                 <strong><%= song.title %></strong> by <%= song.artist %>
                                 <br>
                                 <em><%= song.album || "Unknown Album" %></em> | <%= song.genre || "Unknown Genre" %> (<%= song.release_year || "Unknown Year" %>)
                             </div>
                         </li>
-                    <% }) %>
+                    <% }); %>
                 </ul>
             </div>
         </main>
         <footer>
             <div class="now-playing">
                 <p>No song playing</p>
+            </div>
+            <div class="recommendation">
+                <p>No recommendation available</p>
             </div>
             <div class="progress-container">
                 <span class="elapsed-time">0:00</span>
@@ -64,6 +85,7 @@
             </div>
         </footer>
     </div>
+
     <script src="/script.js"></script>
 </body>
 </html>
