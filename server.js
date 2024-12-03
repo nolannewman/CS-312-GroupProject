@@ -313,6 +313,150 @@ app.get("/music/:filename", (req, res) => {
         }
     });
 });
+// POST: Like a song
+app.post("/api/songs/:id/like", async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const result = await pool.query("UPDATE songs SET likes = likes + 1 WHERE id = $1 RETURNING *", [id]);
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: "Song not found" });
+        }
+
+        res.json({ message: "Song liked successfully", song: result.rows[0] });
+    } catch (error) {
+        console.error("Error liking song:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
+// POST: Dislike a song
+app.post("/api/songs/:id/dislike", async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const result = await pool.query("UPDATE songs SET dislikes = dislikes + 1 WHERE id = $1 RETURNING *", [id]);
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: "Song not found" });
+        }
+
+        res.json({ message: "Song disliked successfully", song: result.rows[0] });
+    } catch (error) {
+        console.error("Error disliking song:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+// POST: Submit a rating
+app.post("/api/songs/:id/rate", async (req, res) => {
+    const { id } = req.params;
+    const { rating } = req.body;
+    const userId = req.user?.id; // Ensure user is authenticated
+
+    if (!userId) {
+        return res.status(401).json({ error: "User must be logged in to rate songs." });
+    }
+
+    if (rating < 1 || rating > 5) {
+        return res.status(400).json({ error: "Rating must be between 1 and 5." });
+    }
+
+    try {
+        // Check if the user has already rated the song
+        const existingRating = await pool.query(
+            "SELECT * FROM user_song_ratings WHERE user_id = $1 AND song_id = $2",
+            [userId, id]
+        );
+
+        if (existingRating.rows.length > 0) {
+            // Update the rating
+            await pool.query(
+                "UPDATE user_song_ratings SET rating = $1 WHERE user_id = $2 AND song_id = $3",
+                [rating, userId, id]
+            );
+        } else {
+            // Insert a new rating
+            await pool.query(
+                "INSERT INTO user_song_ratings (user_id, song_id, rating) VALUES ($1, $2, $3)",
+                [userId, id, rating]
+            );
+        }
+
+        // Update the average rating in the songs table
+        const updatedRating = await pool.query(
+            `UPDATE songs 
+             SET rating = (
+                 SELECT ROUND(AVG(rating)::NUMERIC, 2)
+                 FROM user_song_ratings WHERE song_id = $1
+             )
+             WHERE id = $1 RETURNING rating`,
+            [id]
+        );
+
+        res.json({ message: "Rating submitted successfully", rating: updatedRating.rows[0].rating });
+    } catch (error) {
+        console.error("Error submitting rating:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
+// POST: Submit a rating for an artist
+app.post("/api/artists/:artist/rate", async (req, res) => {
+    const { artist } = req.params; // Artist name from the URL
+    const { rating } = req.body;
+    const userId = req.user?.id; // Ensure the user is logged in
+
+    if (!userId) {
+        return res.status(401).json({ error: "User must be logged in to rate artists." });
+    }
+
+    if (rating < 1 || rating > 5) {
+        return res.status(400).json({ error: "Rating must be between 1 and 5." });
+    }
+
+    try {
+        // Check if the user has already rated the artist
+        const existingRating = await pool.query(
+            "SELECT * FROM user_artist_ratings WHERE user_id = $1 AND artist = $2",
+            [userId, artist]
+        );
+
+        if (existingRating.rows.length > 0) {
+            // Update the existing rating
+            await pool.query(
+                "UPDATE user_artist_ratings SET rating = $1 WHERE user_id = $2 AND artist = $3",
+                [rating, userId, artist]
+            );
+        } else {
+            // Insert a new rating
+            await pool.query(
+                "INSERT INTO user_artist_ratings (user_id, artist, rating) VALUES ($1, $2, $3)",
+                [userId, artist, rating]
+            );
+        }
+
+        // Calculate the new average rating for the artist
+        const updatedRating = await pool.query(
+            `SELECT ROUND(AVG(rating)::NUMERIC, 2) AS avg_rating
+             FROM user_artist_ratings WHERE artist = $1`,
+            [artist]
+        );
+
+        res.json({
+            message: `Successfully rated artist: ${artist}`,
+            averageRating: updatedRating.rows[0].avg_rating,
+        });
+    } catch (error) {
+        console.error("Error submitting artist rating:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+app.get("/", async (req, res) => {
+    try {
+        const playlists = req.session.playlists || [];
+        const { query } =
+
 
 // Start the server
 const PORT = process.env.PORT || 3000;

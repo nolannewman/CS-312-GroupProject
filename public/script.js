@@ -58,6 +58,44 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
+    // Handle like and dislike button clicks
+    const handleLikeDislike = async (action, songId, button) => {
+        try {
+            const response = await fetch(`/api/songs/${songId}/${action}`, { method: "POST" });
+            if (response.ok) {
+                const otherButton = action === "like"
+                    ? button.nextElementSibling // Dislike button
+                    : button.previousElementSibling; // Like button
+
+                // Toggle the shading state
+                if (button.classList.contains("active")) {
+                    button.classList.remove("active");
+                } else {
+                    button.classList.add("active");
+                    otherButton.classList.remove("active");
+                }
+            } else {
+                const data = await response.json();
+                alert(data.error || `Failed to ${action} song`);
+            }
+        } catch (error) {
+            console.error(`Error performing ${action}:`, error);
+        }
+    };
+
+    // Event delegation for like/dislike buttons
+    songsList.addEventListener("click", (event) => {
+        if (event.target.classList.contains("like-btn")) {
+            const songId = event.target.getAttribute("data-id");
+            handleLikeDislike("like", songId, event.target);
+        }
+
+        if (event.target.classList.contains("dislike-btn")) {
+            const songId = event.target.getAttribute("data-id");
+            handleLikeDislike("dislike", songId, event.target);
+        }
+    });
+
     // Play a specific song
     const playSong = (index) => {
         if (index < 0 || index >= songs.length) return;
@@ -125,18 +163,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    // Event delegation for play buttons
-    songsList.addEventListener("click", (event) => {
-        if (event.target.classList.contains("play-btn")) {
-            const index = parseInt(event.target.getAttribute("data-index"), 10);
-            if (currentSongIndex === index && isPlaying) {
-                pauseSong();
-            } else {
-                playSong(index);
-            }
-        }
-    });
-
     // Trigger fetching recommendation after a song ends
     audio.addEventListener("ended", () => {
         playNextSong(); // Automatically play the next song
@@ -176,6 +202,67 @@ document.addEventListener("DOMContentLoaded", () => {
         await fetchSongs();
         await refreshRecentlyPlayed();
     };
+// Handle song rating
+songsList.addEventListener("click", (event) => {
+    if (event.target.classList.contains("rating-btn")) {
+        const songId = event.target.closest(".rating-buttons").getAttribute("data-id");
+        const rating = event.target.getAttribute("data-rating");
+
+        fetch(`/api/songs/${songId}/rate`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ rating }),
+        })
+            .then((res) => res.json())
+            .then((data) => {
+                if (data.message) {
+                    alert(data.message);
+                    location.reload(); // Reload to reflect updated ratings
+                } else {
+                    alert(data.error || "Failed to submit rating");
+                }
+            })
+            .catch((error) => {
+                console.error("Error submitting rating:", error);
+            });
+    }
+});
+// Handle artist rating
+songsList.addEventListener("click", (event) => {
+    if (event.target.classList.contains("artist-rating-btn")) {
+        const artistRatingButtons = event.target.parentElement.querySelectorAll(".artist-rating-btn");
+        const artist = event.target.closest(".artist-rating-buttons").getAttribute("data-artist");
+        const rating = event.target.getAttribute("data-rating");
+
+        // Remove 'active' class from all buttons
+        artistRatingButtons.forEach((button) => button.classList.remove("active"));
+
+        // Add 'active' class to the clicked button
+        event.target.classList.add("active");
+
+        // Send the rating to the server
+        fetch(`/api/artists/${encodeURIComponent(artist)}/rate`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ rating }),
+        })
+            .then((res) => res.json())
+            .then((data) => {
+                if (data.message) {
+                    alert(`${data.message}. Average Rating: ${data.averageRating}`);
+                } else {
+                    alert(data.error || "Failed to submit rating");
+                }
+            })
+            .catch((error) => {
+                console.error("Error submitting artist rating:", error);
+            });
+    }
+});
 
     initializeApp();
 });

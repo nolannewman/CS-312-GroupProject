@@ -5,6 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Music Player</title>
     <link rel="stylesheet" href="/styles.css">
+    <style>
+                /* Shading styles for active like/dislike */
+                .like-btn.active {
+            background-color: #0f0; /* Green for like */
+            color: #fff;
+        }
+
+        .dislike-btn.active {
+            background-color: #f00; /* Red for dislike */
+            color: #fff;
+        }
+        .artist-rating-btn.active {
+    background-color: #4caf50; /* Green */
+    color: white;
+    font-weight: bold;
+    border: 2px solid #388e3c;
+}
+    </style>
 </head>
 <body>
     <div class="container">
@@ -20,6 +38,7 @@
                     />
                     <button type="submit" class="btn search-btn">Search</button>
                 </form>
+                
 
                 <div class="auth-buttons">
                     <% if (!user) { %>
@@ -58,11 +77,34 @@
                                 <br>
                                 <em><%= song.album || "Unknown Album" %></em> | <%= song.genre || "Unknown Genre" %> (<%= song.release_year || "Unknown Year" %>)
                             </div>
+                            <% if (user) { %>
+                                <div class="like-dislike-buttons">
+                                    <button 
+                                        class="like-btn" 
+                                        data-id="<%= song.id %>">
+                                        👍 Like
+                                    </button>
+                                    <button 
+                                        class="dislike-btn" 
+                                        data-id="<%= song.id %>">
+                                        👎 Dislike
+                                    </button>
+                                </div>
+                                <div class="artist-rating-buttons" data-artist="<%= song.artist %>">
+                                    Rate this artist:
+                                    <button class="artist-rating-btn" data-rating="1">1</button>
+                                    <button class="artist-rating-btn" data-rating="2">2</button>
+                                    <button class="artist-rating-btn" data-rating="3">3</button>
+                                    <button class="artist-rating-btn" data-rating="4">4</button>
+                                    <button class="artist-rating-btn" data-rating="5">5</button>
+                                </div>
+                            <% } %>
                         </li>
                     <% }); %>
                 </ul>
             </div>
         </main>
+        
         <footer>
             <div class="now-playing">
                 <p>No song playing</p>
@@ -87,6 +129,7 @@
             </div>
         </footer>
     </div>
+    
 
     <script src="/script.js"></script>
 </body>
